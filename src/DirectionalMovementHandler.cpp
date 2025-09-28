@@ -1570,6 +1570,25 @@ bool DirectionalMovementHandler::CheckCurrentTarget(RE::ActorHandle a_target, bo
 
 void DirectionalMovementHandler::UpdateTargetLock()
 {
+	if (auto* api = Messaging::TDMInterface::GetSingleton(); api && api->IsTargetLockControlTaken()) {
+		if (!api->GetTargetLockOverrideEnabled()) {
+			if (HasTargetLocked()) {
+				ClearTargets();  
+			}
+			(void)ToggleTargetLock(false);  
+			return;                         
+		} else {
+			const auto forced = api->GetForcedTarget();
+			if (forced) {
+				(void)ToggleTargetLock(true);
+				SetTarget(forced);
+				return;  
+			} else {
+				(void)ToggleTargetLock(true);
+			}
+		}
+	}
+
 	if (HasTargetLocked())
 	{		
 		auto playerCamera = RE::PlayerCamera::GetSingleton();

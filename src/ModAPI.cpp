@@ -186,6 +186,73 @@ RE::NiPoint2 Messaging::TDMInterface::GetActualMovementInput() const noexcept
 	return directionalMovementHandler->GetActualInputDirection();
 }
 
+Messaging::APIResult Messaging::TDMInterface::SetTargetLockEnabled(SKSE::PluginHandle a_modHandle, bool a_enabled) noexcept
+{
+	const auto owner = targetLockOwner.load(std::memory_order_acquire);
+	if (owner != SKSE::kInvalidPluginHandle && owner != a_modHandle)
+		return APIResult::AlreadyTaken;
+
+	if (needsTargetLockControl)
+		return APIResult::MustKeep;
+
+	if (owner == SKSE::kInvalidPluginHandle) {
+		auto expected = static_cast<SKSE::PluginHandle>(SKSE::kInvalidPluginHandle);
+		if (!targetLockOwner.compare_exchange_strong(expected, a_modHandle, std::memory_order_acq_rel))
+			return APIResult::AlreadyTaken;
+	}
+
+	targetLockEnabled.store(a_enabled, std::memory_order_release);
+	return APIResult::OK;
+}
+
+Messaging::APIResult Messaging::TDMInterface::SetCurrentTarget(SKSE::PluginHandle a_modHandle, RE::ActorHandle a_actorHandle) noexcept
+{
+	const auto owner = targetLockOwner.load(std::memory_order_acquire);
+	if (owner != SKSE::kInvalidPluginHandle && owner != a_modHandle)
+		return APIResult::AlreadyTaken;
+
+	if (needsTargetLockControl)
+		return APIResult::MustKeep;
+
+	if (owner == SKSE::kInvalidPluginHandle) {
+		auto expected = static_cast<SKSE::PluginHandle>(SKSE::kInvalidPluginHandle);
+		if (!targetLockOwner.compare_exchange_strong(expected, a_modHandle, std::memory_order_acq_rel))
+			return APIResult::AlreadyTaken;
+	}
+
+	forcedTarget = a_actorHandle;
+	targetLockEnabled.store(true, std::memory_order_release);
+
+	return APIResult::OK;
+}
+
+Messaging::APIResult Messaging::TDMInterface::ClearCurrentTarget(SKSE::PluginHandle a_modHandle) noexcept
+{
+	const auto owner = targetLockOwner.load(std::memory_order_acquire);
+	if (owner != SKSE::kInvalidPluginHandle && owner != a_modHandle)
+		return APIResult::NotOwner;
+
+	forcedTarget.reset();
+	return APIResult::OK;
+}
+
+SKSE::PluginHandle Messaging::TDMInterface::GetTargetLockOwner() const noexcept
+{
+	return targetLockOwner.load(std ::memory_order_acquire);
+}
+
+Messaging::APIResult Messaging::TDMInterface::ReleaseTargetLockControl(SKSE::PluginHandle a_modHandle) noexcept
+{
+	const auto owner = targetLockOwner.load(std::memory_order_acquire);
+	if (owner != a_modHandle)
+		return APIResult::NotOwner;
+
+	forcedTarget = {};
+
+	targetLockOwner.store(SKSE::kInvalidPluginHandle, std::memory_order_release);
+	return APIResult::OK;
+}
+
 void Messaging::TDMInterface::SetNeedsDirectionalMovementControl(bool a_needsControl) noexcept
 {
 	needsDirectionalMovementControl = a_needsControl;
@@ -214,4 +281,19 @@ bool Messaging::TDMInterface::IsHeadtrackingControlTaken() const noexcept
 bool Messaging::TDMInterface::IsYawControlTaken() const noexcept
 {
 	return yawOwner.load(std::memory_order::memory_order_acquire) != SKSE::kInvalidPluginHandle;
+}
+
+bool Messaging::TDMInterface::IsTargetLockControlTaken() const noexcept
+{
+	return targetLockOwner.load(std::memory_order_acquire) != SKSE::kInvalidPluginHandle;
+}
+
+bool Messaging::TDMInterface::GetTargetLockOverrideEnabled() const noexcept
+{
+	return targetLockEnabled.load(std::memory_order_acquire);
+}
+
+RE::ActorHandle Messaging::TDMInterface::GetForcedTarget() const noexcept
+{
+	return forcedTarget;
 }

@@ -17,7 +17,8 @@
 	{
 		V1,
 		V2,
-		V3
+		V3,
+		V4
 	};
 
 	// Error types that may be returned by the True Directional Movement API
@@ -186,7 +187,29 @@
 	/// </summary>
 	/// <param name="a_interfaceVersion">The interface version to request</param>
 	/// <returns>The pointer to the API singleton, or nullptr if request failed</returns>
-	[[nodiscard]] inline void* RequestPluginAPI(const InterfaceVersion a_interfaceVersion = InterfaceVersion::V3)
+	
+	class IVTDM4 : public IVTDM3
+	{
+	public:
+		// Enable/Disable target lock .
+		// false: TDM immidiatly disable target lock, clear current target and stop tracking it;
+		// true: allow manipulate target again).
+		virtual APIResult SetTargetLockEnabled(PluginHandle a_myPluginHandle, bool a_enabled) noexcept = 0;
+
+		// Mannualy set target(sets target lock to enabled if was disables).
+		virtual APIResult SetCurrentTarget(PluginHandle a_myPluginHandle, ActorHandle a_actor) noexcept = 0;
+
+		// Clear current target.
+		virtual APIResult ClearCurrentTarget(PluginHandle a_myPluginHandle) noexcept = 0;
+
+		// Release your control over the player target lock.
+		virtual APIResult ReleaseTargetLockControl(PluginHandle a_modHandle) noexcept = 0;
+
+		// Who owns tatget lock
+		virtual PluginHandle GetTargetLockOwner() const noexcept = 0;
+	};
+
+	[[nodiscard]] inline void* RequestPluginAPI(const InterfaceVersion a_interfaceVersion = InterfaceVersion::V4)
 	{
 		auto pluginHandle = GetModuleHandle("TrueDirectionalMovement.dll");
 		_RequestPluginAPI requestAPIFunction = (_RequestPluginAPI)GetProcAddress(pluginHandle, "RequestPluginAPI");
