@@ -58,6 +58,12 @@ add_library(
 	"${ROOT_DIR}/.editorconfig"
 )
 
+target_compile_definitions(TrueDirectionalMovement PRIVATE
+  $<$<BOOL:${DISABLE_AUTO_PROJ_AIM}>:DISABLE_AUTO_PROJ_AIM=1>
+)
+
+message(STATUS "DISABLE_AUTO_PROJ_AIM = ${DISABLE_AUTO_PROJ_AIM}")
+
 target_compile_features(
 	"${PROJECT_NAME}"
 	PRIVATE

@@ -820,6 +820,9 @@ namespace Hooks
 			if (directionalMovementHandler->HasTargetLocked() || desiredTarget.native_handle() != 0) {
 				TargetLockProjectileAimType aimType;
 
+#ifdef DISABLE_AUTO_PROJ_AIM
+				aimType = TargetLockProjectileAimType::kFreeAim;
+#else
 				switch (a_this->formType.get()) {
 				case RE::FormType::ProjectileArrow:
 					aimType = Settings::uTargetLockArrowAimType;
@@ -830,7 +833,7 @@ namespace Hooks
 				default:
 					aimType = TargetLockProjectileAimType::kFreeAim;
 				}
-
+#endif  
 				if (aimType != TargetLockProjectileAimType::kFreeAim) {
 					if (!desiredTarget.get()) {
 						auto target = directionalMovementHandler->GetTarget();
@@ -889,7 +892,6 @@ namespace Hooks
 						}
 					}
 
-					
 					if (aimType == TargetLockProjectileAimType::kHoming) {
 						// homing
 						auto targetPoint = directionalMovementHandler->GetProjectileTargetPoint(a_this->GetHandle());

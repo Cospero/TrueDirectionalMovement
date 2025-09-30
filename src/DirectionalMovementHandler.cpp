@@ -421,6 +421,14 @@ void DirectionalMovementHandler::UpdateFacingState()
 		return;
 	}
 
+	#if DISABLE_AUTO_PROJ_AIM 
+	TargetLockProjectileAimType projAim = kFreeAim;
+	TargetLockProjectileAimType missleAim = kFreeAim;
+	#else
+	TargetLockProjectileAimType projAim = Settings::uTargetLockArrowAimType;
+	TargetLockProjectileAimType missleAim = Settings::uTargetLockMissileAimType;
+	#endif
+
 	// face crosshair if we're using a staff. Thanks NickNak for the iState writeup!
 	int iState = 0;
 	playerCharacter->GetGraphVariableInt("iState", iState);
@@ -431,7 +439,7 @@ void DirectionalMovementHandler::UpdateFacingState()
 		if (rightWeapon && rightWeapon->IsBow()) {
 			bool bAGOWorkaround = playerAttackState != RE::ATTACK_STATE_ENUM::kBowAttached || (previousState != RE::ATTACK_STATE_ENUM::kNone && previousState != RE::ATTACK_STATE_ENUM::kBowReleased);
 			if ((playerAttackState >= RE::ATTACK_STATE_ENUM::kBowDraw && bAGOWorkaround && playerAttackState <= RE::ATTACK_STATE_ENUM::kBowReleased)) {
-				SetIsAiming(!HasTargetLocked() || Settings::uTargetLockArrowAimType == kFreeAim);
+				SetIsAiming(!HasTargetLocked() || projAim == kFreeAim);
 				_bShouldFaceCrosshair = IsAiming();
 				if (_bShouldFaceCrosshair) {
 					_faceCrosshairTimer = _faceCrosshairDuration;
@@ -441,7 +449,7 @@ void DirectionalMovementHandler::UpdateFacingState()
 			}
 		} else if (rightWeapon && rightWeapon->IsCrossbow()) {
 			if ((playerAttackState >= RE::ATTACK_STATE_ENUM::kBowDrawn && playerAttackState <= RE::ATTACK_STATE_ENUM::kBowReleased)) {
-				SetIsAiming(!HasTargetLocked() || Settings::uTargetLockArrowAimType == kFreeAim);
+				SetIsAiming(!HasTargetLocked() || projAim == kFreeAim);
 				_bShouldFaceCrosshair = IsAiming();
 				if (_bShouldFaceCrosshair) {
 					_faceCrosshairTimer = _faceCrosshairDuration;
@@ -451,7 +459,7 @@ void DirectionalMovementHandler::UpdateFacingState()
 			}
 		} else if (rightWeapon && rightWeapon->IsStaff()) {
 			if (iState == 10) {
-				SetIsAiming(!HasTargetLocked() || Settings::uTargetLockMissileAimType == kFreeAim);
+				SetIsAiming(!HasTargetLocked() || missleAim == kFreeAim);
 				_bShouldFaceCrosshair = IsAiming();
 				if (_bShouldFaceCrosshair) {
 					_faceCrosshairTimer = _faceCrosshairDuration;
@@ -464,7 +472,7 @@ void DirectionalMovementHandler::UpdateFacingState()
 		auto rightSpell = rightHand->As<RE::SpellItem>();
 		if (rightSpell && playerCharacter->IsCasting(rightSpell)) {
 			if (rightSpell->GetDelivery() != Delivery::kSelf) {
-				SetIsAiming(!HasTargetLocked() || rightSpell->GetDelivery() == Delivery::kTargetLocation || Settings::uTargetLockMissileAimType == kFreeAim);
+				SetIsAiming(!HasTargetLocked() || rightSpell->GetDelivery() == Delivery::kTargetLocation || missleAim == kFreeAim);
 				_bShouldFaceCrosshair = IsAiming();
 				if (_bShouldFaceCrosshair) {
 					_faceCrosshairTimer = _faceCrosshairDuration;
@@ -485,7 +493,7 @@ void DirectionalMovementHandler::UpdateFacingState()
 		auto leftWeapon = leftHand->As<RE::TESObjectWEAP>();
 		if (leftWeapon && leftWeapon->IsStaff()) {
 			if (iState == 10) {
-				SetIsAiming(!HasTargetLocked() || Settings::uTargetLockMissileAimType == kFreeAim);
+				SetIsAiming(!HasTargetLocked() || missleAim == kFreeAim);
 				_bShouldFaceCrosshair = IsAiming();
 				if (_bShouldFaceCrosshair) {
 					_faceCrosshairTimer = _faceCrosshairDuration;
@@ -498,7 +506,7 @@ void DirectionalMovementHandler::UpdateFacingState()
 		auto leftSpell = leftHand->As<RE::SpellItem>();
 		if (leftSpell && playerCharacter->IsCasting(leftSpell)) {
 			if (leftSpell->GetDelivery() != Delivery::kSelf) {
-				SetIsAiming(!HasTargetLocked() || leftSpell->GetDelivery() == Delivery::kTargetLocation || Settings::uTargetLockMissileAimType == kFreeAim);
+				SetIsAiming(!HasTargetLocked() || leftSpell->GetDelivery() == Delivery::kTargetLocation || missleAim == kFreeAim);
 				_bShouldFaceCrosshair = IsAiming();
 				if (_bShouldFaceCrosshair) {
 					_faceCrosshairTimer = _faceCrosshairDuration;
